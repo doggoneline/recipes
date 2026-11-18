@@ -1,0 +1,27 @@
+---
+const { title } = Astro.props;
+const BASE = import.meta.env.BASE_URL;
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} · My Recipes</title>
+  <style>
+    @media print { .no-print, nav, footer { display: none; } }
+    body { font-family: Georgia, serif; max-width: 44rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.6; color: #2b2b2b; background: #fdfcf9; }
+    h1 { font-size: 2.1rem; margin-bottom: .2rem; }
+    h2 { border-bottom: 2px solid #e5dfd3; padding-bottom: .2rem; }
+    ul li { margin: .35rem 0; }
+    button { font: inherit; padding: .35rem .8rem; border: 1px solid #c9c2b4; border-radius: 6px; background: #fff; cursor: pointer; }
+    button:hover { background: #f1ede2; }
+    nav a, a { color: #6b4f2a; }
+    nav { margin-bottom: 1.5rem; }
+    input[type="search"], input[type="text"] { font: inherit; padding: .4rem .6rem; border: 1px solid #c9c2b4; border-radius: 6px; width: 100%; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <nav class="no-print"><a href={BASE}>← All recipes</a> · <a href={`${BASE}/search`}>Search</a></nav>
+  <slot />
+</body>
+</html>

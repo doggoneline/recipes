@@ -1,0 +1,71 @@
+---
+import { getCollection, render } from 'astro:content';
+export async function getStaticPaths() {
+  const recipes = await getCollection('recipes');
+  return recipes.map(r => ({ params: { slug: r.id }, props: { recipe: r } }));
+}
+const { recipe } = Astro.props;
+const { Content } = await render(recipe);
+const BASE = import.meta.env.BASE_URL;
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{recipe.data.title}</title>
+  <style>
+    @media print { .no-print, nav, footer { display: none; } }
+    body { font-family: Georgia, serif; max-width: 44rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.6; color: #2b2b2b; background: #fdfcf9; }
+    h1 { font-size: 2.1rem; margin-bottom: .2rem; }
+    h2 { border-bottom: 2px solid #e5dfd3; padding-bottom: .2rem; }
+    ul li { margin: .35rem 0; }
+    button { font: inherit; padding: .35rem .8rem; border: 1px solid #c9c2b4; border-radius: 6px; background: #fff; cursor: pointer; }
+    button:hover { background: #f1ede2; }
+    nav a, a { color: #6b4f2a; }
+  </style>
+</head>
+<body>
+  <nav class="no-print"><a href={BASE}>← All recipes</a> · <a href={`${BASE}/search`}>Search</a></nav>
+  <h1>{recipe.data.title}</h1>
+  <p class="no-print">
+  Categories: {recipe.data.categories.map((c, i) => (<>{i > 0 && ', '}<a href={`${BASE}/categories/${c}/`}>{c}</a></>))}
+  &nbsp;|&nbsp; Tags: {recipe.data.tags.map((t, i) => (<>{i > 0 && ', '}<a href={`${BASE}/tags/${t}/`}>{t}</a></>))}
+</p>
+  <div class="no-print" id="scaler">
+    <button data-mult="0.5">½×</button>
+    <button data-mult="1">1×</button>
+    <button data-mult="2">2×</button>
+  </div>
+  <ul>
+    {recipe.data.ingredients.map(i => (
+      <li data-amount={typeof i.amount === 'number' ? i.amount : ''}
+          data-rawq={typeof i.amount === 'string' ? `${i.amount}${i.unit ? ' ' + i.unit : ''}` : ''}
+          data-unit={i.unit ?? ''} data-item={i.item} data-note={i.note ?? ''}></li>
+    ))}
+  </ul>
+  <article><Content /></article>
+  <script>
+    const FRACTIONS = [[0,''],[1/8,'⅛'],[1/4,'¼'],[1/3,'⅓'],[3/8,'⅜'],[1/2,'½'],[5/8,'⅝'],[2/3,'⅔'],[3/4,'¾'],[7/8,'⅞']];
+    function fmt(n) {
+      const whole = Math.floor(n), rem = n - whole;
+      let best = FRACTIONS[0], bd = Infinity;
+      for (const f of FRACTIONS) { const d = Math.abs(rem - f[0]); if (d < bd) { bd = d; best = f; } }
+      let w = whole, frac = best[1];
+      if (best[0] === 7/8 && rem > 0.92) { w += 1; frac = ''; }
+      if (w === 0 && frac) return frac;
+      return frac ? `${w}${frac}` : String(w);
+    }
+    function render(mult) {
+      document.querySelectorAll('li[data-item]').forEach(li => {
+        if (li.dataset.rawq) { li.textContent = [li.dataset.rawq, li.dataset.item, li.dataset.note].filter(Boolean).join(' '); return; }
+        const base = parseFloat(li.dataset.amount);
+        const qty = isNaN(base) ? '' : fmt(base * mult) + (li.dataset.unit ? ' ' + li.dataset.unit : '');
+        li.textContent = [qty, li.dataset.item, li.dataset.note].filter(Boolean).join(' ');
+      });
+    }
+    document.getElementById('scaler').addEventListener('click', e => {
+      const m = parseFloat(e.target.dataset.mult); if (m) render(m);
+    });
+    render(1);
+  </script>
+</body>
+</html>
